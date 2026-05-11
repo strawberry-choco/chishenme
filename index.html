@@ -81,75 +81,100 @@
       padding: 24px;
     }
 
-    .roulette-panel {
+    .wheel-panel {
       display: grid;
       gap: 22px;
       place-items: center;
     }
 
-    .roulette {
-      width: min(390px, 100%);
+    .wheel-wrap {
+      width: min(420px, 100%);
       aspect-ratio: 1;
-      border-radius: 50%;
+      position: relative;
       display: grid;
       place-items: center;
+    }
+
+    .pointer {
+      position: absolute;
+      top: -3px;
+      left: 50%;
+      z-index: 3;
+      width: 34px;
+      height: 44px;
+      transform: translateX(-50%);
+      clip-path: polygon(50% 100%, 0 0, 100% 0);
+      background: var(--accent);
+      filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.45));
+    }
+
+    .wheel {
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: 50%;
       position: relative;
       overflow: hidden;
-      background:
-        conic-gradient(from 18deg,
-          #32263e 0 12.5%, #17151f 12.5% 25%,
-          #32263e 25% 37.5%, #17151f 37.5% 50%,
-          #32263e 50% 62.5%, #17151f 62.5% 75%,
-          #32263e 75% 87.5%, #17151f 87.5% 100%);
+      background: var(--wheel-background, conic-gradient(#32263e, #17151f));
       border: 14px solid #0d0c12;
       box-shadow:
         inset 0 0 0 10px rgba(255, 255, 255, 0.06),
         inset 0 0 44px rgba(0, 0, 0, 0.7),
         0 24px 50px var(--shadow);
+      transform: rotate(var(--wheel-rotation, 0deg));
+      transition: transform 4.2s cubic-bezier(0.12, 0.72, 0.13, 1);
     }
 
-    .roulette::before {
+    .wheel::after {
       content: "";
       position: absolute;
       inset: 18%;
       border-radius: 50%;
-      background: rgba(17, 16, 24, 0.78);
+      background: rgba(17, 16, 24, 0.88);
       border: 1px solid rgba(255, 255, 255, 0.12);
       box-shadow: inset 0 0 28px rgba(0, 0, 0, 0.5);
     }
 
-    .roulette.spinning {
-      animation: rumble 130ms linear infinite;
+    .wheel-label {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 47%;
+      padding-left: 10px;
+      color: #fff8ea;
+      font-size: clamp(0.72rem, 1.7vw, 0.95rem);
+      font-weight: 800;
+      line-height: 1.15;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      text-shadow: 0 2px 5px rgba(0, 0, 0, 0.65);
+      transform-origin: 0 50%;
+      transform: rotate(var(--label-angle)) translateY(-50%);
     }
 
-    .roulette-result {
-      width: 68%;
-      min-height: 96px;
-      z-index: 1;
+    .wheel-center {
+      position: absolute;
+      z-index: 2;
+      width: 45%;
+      min-height: 110px;
       display: grid;
       place-items: center;
       padding: 18px;
-      border-radius: 24px;
-      background: linear-gradient(145deg, rgba(255, 190, 61, 0.96), rgba(255, 132, 45, 0.95));
+      border-radius: 999px;
+      background: linear-gradient(145deg, rgba(255, 190, 61, 0.98), rgba(255, 132, 45, 0.96));
       color: #201208;
-      font-size: clamp(1.4rem, 5vw, 2.6rem);
+      font-size: clamp(1rem, 3vw, 1.45rem);
       font-weight: 900;
       text-align: center;
       overflow-wrap: anywhere;
       box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
     }
 
-    .roulette-result.placeholder {
-      background: rgba(255, 255, 255, 0.08);
+    .wheel-center.placeholder {
+      background: rgba(255, 255, 255, 0.1);
       color: var(--muted);
-      font-size: 1.2rem;
-      font-weight: 700;
-    }
-
-    @keyframes rumble {
-      0% { transform: rotate(-0.7deg) scale(1); }
-      50% { transform: rotate(0.7deg) scale(1.006); }
-      100% { transform: rotate(-0.7deg) scale(1); }
+      font-size: 1rem;
+      font-weight: 800;
     }
 
     form {
@@ -297,13 +322,15 @@
   <main>
     <section class="hero" aria-labelledby="page-title">
       <h1 id="page-title">Chi Shen Me</h1>
-      <p class="subtitle">Add the foods, places, or plans you are considering. Spin the roulette and let chance pick one for you.</p>
+      <p class="subtitle">Add the foods, places, or plans you are considering. Spin the wheel and let chance pick one for you.</p>
     </section>
 
-    <section class="content" aria-label="Roulette picker">
-      <div class="panel roulette-panel">
-        <div id="roulette" class="roulette" aria-live="polite">
-          <div id="roulette-result" class="roulette-result placeholder">Add items to begin</div>
+    <section class="content" aria-label="Spinning wheel picker">
+      <div class="panel wheel-panel">
+        <div class="wheel-wrap" aria-live="polite">
+          <div class="pointer" aria-hidden="true"></div>
+          <div id="wheel" class="wheel"></div>
+          <div id="wheel-center" class="wheel-center placeholder">Add items to begin</div>
         </div>
         <button id="spin-button" class="spin-button" type="button">Spin</button>
         <p id="status" class="status">Saved items persist on this device.</p>
@@ -334,8 +361,8 @@
     const input = document.getElementById('item-input');
     const addButton = document.getElementById('add-button');
     const spinButton = document.getElementById('spin-button');
-    const roulette = document.getElementById('roulette');
-    const result = document.getElementById('roulette-result');
+    const wheel = document.getElementById('wheel');
+    const wheelCenter = document.getElementById('wheel-center');
     const status = document.getElementById('status');
     const itemList = document.getElementById('items');
     const emptyMessage = document.getElementById('empty-message');
@@ -345,6 +372,7 @@
     let items = [];
     let spinning = false;
     let selectedId = null;
+    let currentRotation = 0;
 
     function setStatus(message, strong = false) {
       status.textContent = message;
@@ -448,18 +476,50 @@
       emptyMessage.hidden = items.length > 0;
       itemCount.textContent = `${items.length} saved`;
       spinButton.disabled = spinning || items.length === 0;
+      renderWheel();
+    }
+
+    function colorForIndex(index) {
+      const colors = ['#d95d39', '#f2af29', '#3a86ff', '#8338ec', '#06d6a0', '#ef476f', '#118ab2', '#f77f00'];
+      return colors[index % colors.length];
+    }
+
+    function renderWheel() {
+      wheel.textContent = '';
+
+      if (items.length === 0) {
+        wheel.style.setProperty('--wheel-background', 'conic-gradient(#32263e, #17151f)');
+        return;
+      }
+
+      const segmentSize = 360 / items.length;
+      const gradient = items.map((item, index) => {
+        const start = index * segmentSize;
+        const end = (index + 1) * segmentSize;
+        return `${colorForIndex(index)} ${start}deg ${end}deg`;
+      }).join(', ');
+
+      wheel.style.setProperty('--wheel-background', `conic-gradient(from -90deg, ${gradient})`);
+
+      items.forEach((item, index) => {
+        const label = document.createElement('div');
+        label.className = 'wheel-label';
+        label.textContent = item.text;
+        label.style.setProperty('--label-angle', `${index * segmentSize + segmentSize / 2 - 90}deg`);
+        wheel.append(label);
+      });
     }
 
     function updateResultPlaceholder() {
-      result.classList.add('placeholder');
-      result.textContent = items.length ? 'Ready to spin' : 'Add items to begin';
+      wheelCenter.classList.add('placeholder');
+      wheelCenter.textContent = items.length ? 'Ready to spin' : 'Add items to begin';
     }
 
     function pickWinningIndex() {
       return Math.floor(Math.random() * items.length);
     }
 
-    function spinRoulette() {
+    function spinWheel() {
       if (spinning) {
         return;
       }
@@ -473,35 +533,24 @@
       spinning = true;
       const winningIndex = pickWinningIndex();
       const winningItem = items[winningIndex];
-      const steps = 24 + winningIndex;
-      let step = 0;
-      let delay = 45;
+      const segmentSize = 360 / items.length;
+      const segmentCenter = winningIndex * segmentSize + segmentSize / 2;
+      const fullTurns = 5 + Math.floor(Math.random() * 3);
+      currentRotation += fullTurns * 360 + (360 - ((currentRotation + segmentCenter) % 360));
 
       setControlsDisabled(true);
-      roulette.classList.add('spinning');
-      result.classList.remove('placeholder');
+      wheelCenter.classList.remove('placeholder');
+      wheelCenter.textContent = 'Spinning...';
       setStatus('Spinning...');
+      wheel.style.setProperty('--wheel-rotation', `${currentRotation}deg`);
 
-      function tick() {
-        const visibleItem = items[step % items.length];
-        result.textContent = visibleItem.text;
-
-        if (step >= steps) {
-          result.textContent = winningItem.text;
-          selectedId = winningItem.id;
-          spinning = false;
-          roulette.classList.remove('spinning');
-          setControlsDisabled(false);
-          setStatus(`Chosen: ${winningItem.text}`, true);
-          return;
-        }
-
-        step += 1;
-        delay = Math.min(delay + 12, 230);
-        window.setTimeout(tick, delay);
-      }
-
-      tick();
+      window.setTimeout(() => {
+        selectedId = winningItem.id;
+        spinning = false;
+        wheelCenter.textContent = winningItem.text;
+        setControlsDisabled(false);
+        setStatus(`Chosen: ${winningItem.text}`, true);
+      }, 4300);
     }
 
     form.addEventListener('submit', async (event) => {
@@ -530,7 +579,7 @@
       }
     });
 
-    spinButton.addEventListener('click', spinRoulette);
+    spinButton.addEventListener('click', spinWheel);
 
     async function init() {
       try {
