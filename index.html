@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chi Shen Me</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #111018;
+      --panel: #1c1a27;
+      --panel-soft: #262337;
+      --text: #fff8ea;
+      --muted: #bcb4cf;
+      --accent: #ffbe3d;
+      --accent-dark: #7a3d0d;
+      --danger: #ff6b6b;
+      --shadow: rgba(0, 0, 0, 0.35);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background:
+        radial-gradient(circle at top left, rgba(255, 190, 61, 0.18), transparent 32rem),
+        radial-gradient(circle at bottom right, rgba(255, 107, 107, 0.14), transparent 30rem),
+        var(--bg);
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    main {
+      width: min(920px, 100%);
+      display: grid;
+      gap: 24px;
+    }
+
+    .hero,
+    .panel {
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 28px;
+      background: rgba(28, 26, 39, 0.86);
+      box-shadow: 0 24px 80px var(--shadow);
+      backdrop-filter: blur(12px);
+    }
+
+    .hero {
+      padding: clamp(28px, 5vw, 52px);
+      text-align: center;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(3rem, 11vw, 7rem);
+      letter-spacing: -0.08em;
+      line-height: 0.9;
+    }
+
+    .subtitle {
+      max-width: 620px;
+      margin: 18px auto 0;
+      color: var(--muted);
+      font-size: clamp(1rem, 2vw, 1.15rem);
+      line-height: 1.6;
+    }
+
+    .content {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+      gap: 24px;
+    }
+
+    .panel {
+      padding: 24px;
+    }
+
+    .roulette-panel {
+      display: grid;
+      gap: 22px;
+      place-items: center;
+    }
+
+    .roulette {
+      width: min(390px, 100%);
+      aspect-ratio: 1;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      position: relative;
+      overflow: hidden;
+      background:
+        conic-gradient(from 18deg,
+          #32263e 0 12.5%, #17151f 12.5% 25%,
+          #32263e 25% 37.5%, #17151f 37.5% 50%,
+          #32263e 50% 62.5%, #17151f 62.5% 75%,
+          #32263e 75% 87.5%, #17151f 87.5% 100%);
+      border: 14px solid #0d0c12;
+      box-shadow:
+        inset 0 0 0 10px rgba(255, 255, 255, 0.06),
+        inset 0 0 44px rgba(0, 0, 0, 0.7),
+        0 24px 50px var(--shadow);
+    }
+
+    .roulette::before {
+      content: "";
+      position: absolute;
+      inset: 18%;
+      border-radius: 50%;
+      background: rgba(17, 16, 24, 0.78);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: inset 0 0 28px rgba(0, 0, 0, 0.5);
+    }
+
+    .roulette.spinning {
+      animation: rumble 130ms linear infinite;
+    }
+
+    .roulette-result {
+      width: 68%;
+      min-height: 96px;
+      z-index: 1;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      border-radius: 24px;
+      background: linear-gradient(145deg, rgba(255, 190, 61, 0.96), rgba(255, 132, 45, 0.95));
+      color: #201208;
+      font-size: clamp(1.4rem, 5vw, 2.6rem);
+      font-weight: 900;
+      text-align: center;
+      overflow-wrap: anywhere;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    .roulette-result.placeholder {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--muted);
+      font-size: 1.2rem;
+      font-weight: 700;
+    }
+
+    @keyframes rumble {
+      0% { transform: rotate(-0.7deg) scale(1); }
+      50% { transform: rotate(0.7deg) scale(1.006); }
+      100% { transform: rotate(-0.7deg) scale(1); }
+    }
+
+    form {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+    }
+
+    input,
+    button {
+      border: 0;
+      border-radius: 999px;
+      font: inherit;
+    }
+
+    input {
+      min-width: 0;
+      flex: 1;
+      padding: 14px 18px;
+      background: var(--panel-soft);
+      color: var(--text);
+      outline: 2px solid transparent;
+    }
+
+    input:focus {
+      outline-color: rgba(255, 190, 61, 0.7);
+    }
+
+    button {
+      cursor: pointer;
+      padding: 14px 20px;
+      background: var(--accent);
+      color: #231506;
+      font-weight: 800;
+      transition: transform 160ms ease, opacity 160ms ease, background 160ms ease;
+    }
+
+    button:hover:not(:disabled) {
+      transform: translateY(-1px);
+      background: #ffd06a;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
+    }
+
+    .spin-button {
+      min-width: 180px;
+      padding: 16px 28px;
+      font-size: 1.1rem;
+    }
+
+    .status {
+      min-height: 1.5em;
+      margin: 0;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    .status.strong {
+      color: var(--accent);
+      font-weight: 800;
+    }
+
+    .list-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 1.2rem;
+    }
+
+    .count {
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .items {
+      display: grid;
+      gap: 10px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 12px 12px 16px;
+      border-radius: 18px;
+      background: var(--panel-soft);
+    }
+
+    .item span {
+      overflow-wrap: anywhere;
+    }
+
+    .delete-button {
+      flex: 0 0 auto;
+      padding: 8px 12px;
+      background: rgba(255, 107, 107, 0.16);
+      color: #ffd8d8;
+    }
+
+    .delete-button:hover:not(:disabled) {
+      background: rgba(255, 107, 107, 0.28);
+    }
+
+    .empty {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    @media (max-width: 760px) {
+      body {
+        padding: 16px;
+      }
+
+      .content {
+        grid-template-columns: 1fr;
+      }
+
+      form {
+        flex-direction: column;
+      }
+
+      button,
+      .spin-button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="hero" aria-labelledby="page-title">
+      <h1 id="page-title">Chi Shen Me</h1>
+      <p class="subtitle">Add the foods, places, or plans you are considering. Spin the roulette and let chance pick one for you.</p>
+    </section>
+
+    <section class="content" aria-label="Roulette picker">
+      <div class="panel roulette-panel">
+        <div id="roulette" class="roulette" aria-live="polite">
+          <div id="roulette-result" class="roulette-result placeholder">Add items to begin</div>
+        </div>
+        <button id="spin-button" class="spin-button" type="button">Spin</button>
+        <p id="status" class="status">Saved items persist on this device.</p>
+      </div>
+
+      <aside class="panel">
+        <form id="item-form" autocomplete="off">
+          <input id="item-input" type="text" maxlength="80" placeholder="Add an item" aria-label="Item name">
+          <button id="add-button" type="submit">Add</button>
+        </form>
+
+        <div class="list-header">
+          <h2>Items</h2>
+          <span id="item-count" class="count">0 saved</span>
+        </div>
+
+        <ul id="items" class="items"></ul>
+        <p id="empty-message" class="empty">No items yet. Add at least one option to spin.</p>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    const dbName = 'chi-shen-me-roulette';
+    const storeName = 'items';
+
+    const form = document.getElementById('item-form');
+    const input = document.getElementById('item-input');
+    const addButton = document.getElementById('add-button');
+    const spinButton = document.getElementById('spin-button');
+    const roulette = document.getElementById('roulette');
+    const result = document.getElementById('roulette-result');
+    const status = document.getElementById('status');
+    const itemList = document.getElementById('items');
+    const emptyMessage = document.getElementById('empty-message');
+    const itemCount = document.getElementById('item-count');
+
+    let db;
+    let items = [];
+    let spinning = false;
+    let selectedId = null;
+
+    function setStatus(message, strong = false) {
+      status.textContent = message;
+      status.classList.toggle('strong', strong);
+    }
+
+    function setControlsDisabled(disabled) {
+      input.disabled = disabled;
+      addButton.disabled = disabled;
+      spinButton.disabled = disabled || items.length === 0;
+      document.querySelectorAll('.delete-button').forEach((button) => {
+        button.disabled = disabled;
+      });
+    }
+
+    function requestToPromise(request) {
+      return new Promise((resolve, reject) => {
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+    }
+
+    function openDatabase() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open(dbName, 1);
+
+        request.onupgradeneeded = () => {
+          const database = request.result;
+          if (!database.objectStoreNames.contains(storeName)) {
+            database.createObjectStore(storeName, { keyPath: 'id' });
+          }
+        };
+
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+    }
+
+    function getStore(mode) {
+      return db.transaction(storeName, mode).objectStore(storeName);
+    }
+
+    async function loadItems() {
+      const savedItems = await requestToPromise(getStore('readonly').getAll());
+      items = savedItems.sort((a, b) => a.createdAt - b.createdAt);
+      renderItems();
+    }
+
+    async function saveItem(text) {
+      const item = {
+        id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
+        text,
+        createdAt: Date.now()
+      };
+
+      await requestToPromise(getStore('readwrite').add(item));
+      items.push(item);
+      renderItems();
+    }
+
+    async function deleteItem(id) {
+      await requestToPromise(getStore('readwrite').delete(id));
+      items = items.filter((item) => item.id !== id);
+      if (selectedId === id) {
+        selectedId = null;
+        updateResultPlaceholder();
+      }
+      renderItems();
+    }
+
+    function renderItems() {
+      itemList.textContent = '';
+
+      for (const item of items) {
+        const li = document.createElement('li');
+        li.className = 'item';
+
+        const text = document.createElement('span');
+        text.textContent = item.text;
+
+        const deleteButton = document.createElement('button');
+        deleteButton.type = 'button';
+        deleteButton.className = 'delete-button';
+        deleteButton.textContent = 'Delete';
+        deleteButton.addEventListener('click', async () => {
+          try {
+            setControlsDisabled(true);
+            await deleteItem(item.id);
+            setStatus('Item deleted.');
+          } catch (error) {
+            setStatus(`Could not delete item: ${error.message || error}`);
+          } finally {
+            setControlsDisabled(spinning);
+          }
+        });
+
+        li.append(text, deleteButton);
+        itemList.append(li);
+      }
+
+      emptyMessage.hidden = items.length > 0;
+      itemCount.textContent = `${items.length} saved`;
+      spinButton.disabled = spinning || items.length === 0;
+    }
+
+    function updateResultPlaceholder() {
+      result.classList.add('placeholder');
+      result.textContent = items.length ? 'Ready to spin' : 'Add items to begin';
+    }
+
+    function pickWinningIndex() {
+      return Math.floor(Math.random() * items.length);
+    }
+
+    function spinRoulette() {
+      if (spinning) {
+        return;
+      }
+
+      if (items.length === 0) {
+        setStatus('Add at least one item before spinning.');
+        updateResultPlaceholder();
+        return;
+      }
+
+      spinning = true;
+      const winningIndex = pickWinningIndex();
+      const winningItem = items[winningIndex];
+      const steps = 24 + winningIndex;
+      let step = 0;
+      let delay = 45;
+
+      setControlsDisabled(true);
+      roulette.classList.add('spinning');
+      result.classList.remove('placeholder');
+      setStatus('Spinning...');
+
+      function tick() {
+        const visibleItem = items[step % items.length];
+        result.textContent = visibleItem.text;
+
+        if (step >= steps) {
+          result.textContent = winningItem.text;
+          selectedId = winningItem.id;
+          spinning = false;
+          roulette.classList.remove('spinning');
+          setControlsDisabled(false);
+          setStatus(`Chosen: ${winningItem.text}`, true);
+          return;
+        }
+
+        step += 1;
+        delay = Math.min(delay + 12, 230);
+        window.setTimeout(tick, delay);
+      }
+
+      tick();
+    }
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const text = input.value.trim();
+
+      if (!text) {
+        setStatus('Enter an item before adding it.');
+        input.focus();
+        return;
+      }
+
+      try {
+        setControlsDisabled(true);
+        await saveItem(text);
+        input.value = '';
+        input.focus();
+        if (!selectedId) {
+          updateResultPlaceholder();
+        }
+        setStatus('Item saved.');
+      } catch (error) {
+        setStatus(`Could not save item: ${error.message || error}`);
+      } finally {
+        setControlsDisabled(spinning);
+      }
+    });
+
+    spinButton.addEventListener('click', spinRoulette);
+
+    async function init() {
+      try {
+        db = await openDatabase();
+        await loadItems();
+        updateResultPlaceholder();
+        setStatus('Saved items persist on this device.');
+      } catch (error) {
+        setStatus(`IndexedDB is unavailable: ${error.message || error}`);
+        input.disabled = true;
+        addButton.disabled = true;
+        spinButton.disabled = true;
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>
