@@ -52,23 +52,23 @@
     }
 
     .hero {
-      padding: clamp(28px, 5vw, 52px);
+      padding: clamp(18px, 3vw, 28px);
       text-align: center;
     }
 
     h1 {
       margin: 0;
-      font-size: clamp(3rem, 11vw, 7rem);
-      letter-spacing: -0.08em;
-      line-height: 0.9;
+      font-size: clamp(2.35rem, 7vw, 4.6rem);
+      letter-spacing: -0.07em;
+      line-height: 0.95;
     }
 
     .subtitle {
       max-width: 620px;
-      margin: 18px auto 0;
+      margin: 10px auto 0;
       color: var(--muted);
-      font-size: clamp(1rem, 2vw, 1.15rem);
-      line-height: 1.6;
+      font-size: clamp(0.95rem, 1.6vw, 1.05rem);
+      line-height: 1.45;
     }
 
     .content {
@@ -124,57 +124,22 @@
       transition: transform 4.2s cubic-bezier(0.12, 0.72, 0.13, 1);
     }
 
-    .wheel::after {
-      content: "";
-      position: absolute;
-      inset: 18%;
-      border-radius: 50%;
-      background: rgba(17, 16, 24, 0.88);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      box-shadow: inset 0 0 28px rgba(0, 0, 0, 0.5);
-    }
-
     .wheel-label {
       position: absolute;
       top: 50%;
       left: 50%;
-      width: 47%;
-      padding-left: 10px;
+      width: 36%;
       color: #fff8ea;
-      font-size: clamp(0.72rem, 1.7vw, 0.95rem);
-      font-weight: 800;
+      font-size: clamp(0.72rem, 1.7vw, 0.98rem);
+      font-weight: 900;
       line-height: 1.15;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      text-shadow: 0 2px 5px rgba(0, 0, 0, 0.65);
-      transform-origin: 0 50%;
-      transform: rotate(var(--label-angle)) translateY(-50%);
-    }
-
-    .wheel-center {
-      position: absolute;
-      z-index: 2;
-      width: 45%;
-      min-height: 110px;
-      display: grid;
-      place-items: center;
-      padding: 18px;
-      border-radius: 999px;
-      background: linear-gradient(145deg, rgba(255, 190, 61, 0.98), rgba(255, 132, 45, 0.96));
-      color: #201208;
-      font-size: clamp(1rem, 3vw, 1.45rem);
-      font-weight: 900;
       text-align: center;
-      overflow-wrap: anywhere;
-      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
-    }
-
-    .wheel-center.placeholder {
-      background: rgba(255, 255, 255, 0.1);
-      color: var(--muted);
-      font-size: 1rem;
-      font-weight: 800;
+      text-shadow: 0 2px 5px rgba(0, 0, 0, 0.72);
+      transform-origin: 0 50%;
+      transform: rotate(var(--label-angle)) translate(42%, -50%);
     }
 
     form {
@@ -330,7 +295,6 @@
         <div class="wheel-wrap" aria-live="polite">
           <div class="pointer" aria-hidden="true"></div>
           <div id="wheel" class="wheel"></div>
-          <div id="wheel-center" class="wheel-center placeholder">Add items to begin</div>
         </div>
         <button id="spin-button" class="spin-button" type="button">Spin</button>
         <p id="status" class="status">Saved items persist on this device.</p>
@@ -362,7 +326,6 @@
     const addButton = document.getElementById('add-button');
     const spinButton = document.getElementById('spin-button');
     const wheel = document.getElementById('wheel');
-    const wheelCenter = document.getElementById('wheel-center');
     const status = document.getElementById('status');
     const itemList = document.getElementById('items');
     const emptyMessage = document.getElementById('empty-message');
@@ -495,24 +458,23 @@
       const segmentSize = 360 / items.length;
       const gradient = items.map((item, index) => {
         const start = index * segmentSize;
-        const end = (index + 1) * segmentSize;
+        const end = start + segmentSize;
         return `${colorForIndex(index)} ${start}deg ${end}deg`;
       }).join(', ');
 
-      wheel.style.setProperty('--wheel-background', `conic-gradient(from -90deg, ${gradient})`);
+      wheel.style.setProperty('--wheel-background', `conic-gradient(from ${-segmentSize / 2}deg, ${gradient})`);
 
       items.forEach((item, index) => {
         const label = document.createElement('div');
         label.className = 'wheel-label';
         label.textContent = item.text;
-        label.style.setProperty('--label-angle', `${index * segmentSize + segmentSize / 2 - 90}deg`);
+        label.style.setProperty('--label-angle', `${index * segmentSize - 90}deg`);
         wheel.append(label);
       });
     }
 
     function updateResultPlaceholder() {
-      wheelCenter.classList.add('placeholder');
-      wheelCenter.textContent = items.length ? 'Ready to spin' : 'Add items to begin';
+      setStatus(items.length ? 'Ready to spin.' : 'Add items to begin.');
     }
 
     function pickWinningIndex() {
@@ -534,20 +496,17 @@
       const winningIndex = pickWinningIndex();
       const winningItem = items[winningIndex];
       const segmentSize = 360 / items.length;
-      const segmentCenter = winningIndex * segmentSize + segmentSize / 2;
+      const segmentCenter = winningIndex * segmentSize;
       const fullTurns = 5 + Math.floor(Math.random() * 3);
       currentRotation += fullTurns * 360 + (360 - ((currentRotation + segmentCenter) % 360));
 
       setControlsDisabled(true);
-      wheelCenter.classList.remove('placeholder');
-      wheelCenter.textContent = 'Spinning...';
       setStatus('Spinning...');
       wheel.style.setProperty('--wheel-rotation', `${currentRotation}deg`);
 
       window.setTimeout(() => {
         selectedId = winningItem.id;
         spinning = false;
-        wheelCenter.textContent = winningItem.text;
         setControlsDisabled(false);
         setStatus(`Chosen: ${winningItem.text}`, true);
       }, 4300);
