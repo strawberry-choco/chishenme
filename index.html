@@ -97,13 +97,13 @@
 
     .pointer {
       position: absolute;
-      top: -3px;
-      left: 50%;
+      top: 50%;
+      right: -3px;
       z-index: 3;
-      width: 34px;
-      height: 44px;
-      transform: translateX(-50%);
-      clip-path: polygon(50% 100%, 0 0, 100% 0);
+      width: 44px;
+      height: 34px;
+      transform: translateY(-50%);
+      clip-path: polygon(0 50%, 100% 0, 100% 100%);
       background: var(--accent);
       filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.45));
     }
@@ -139,36 +139,13 @@
       text-align: center;
       text-shadow: 0 2px 5px rgba(0, 0, 0, 0.72);
       transform-origin: 0 50%;
-      transform: rotate(var(--label-angle)) translate(42%, -50%);
+      transform: rotate(var(--label-angle)) translate(42%, -42%);
     }
 
-    form {
-      display: flex;
-      gap: 10px;
-      width: 100%;
-    }
-
-    input,
     button {
       border: 0;
       border-radius: 999px;
       font: inherit;
-    }
-
-    input {
-      min-width: 0;
-      flex: 1;
-      padding: 14px 18px;
-      background: var(--panel-soft);
-      color: var(--text);
-      outline: 2px solid transparent;
-    }
-
-    input:focus {
-      outline-color: rgba(255, 190, 61, 0.7);
-    }
-
-    button {
       cursor: pointer;
       padding: 14px 20px;
       background: var(--accent);
@@ -246,23 +223,6 @@
       overflow-wrap: anywhere;
     }
 
-    .delete-button {
-      flex: 0 0 auto;
-      padding: 8px 12px;
-      background: rgba(255, 107, 107, 0.16);
-      color: #ffd8d8;
-    }
-
-    .delete-button:hover:not(:disabled) {
-      background: rgba(255, 107, 107, 0.28);
-    }
-
-    .empty {
-      margin: 0;
-      color: var(--muted);
-      line-height: 1.5;
-    }
-
     @media (max-width: 760px) {
       body {
         padding: 16px;
@@ -271,11 +231,6 @@
       .content {
         grid-template-columns: 1fr;
       }
-
-      form {
-        flex-direction: column;
-      }
-
       button,
       .spin-button {
         width: 100%;
@@ -287,7 +242,7 @@
   <main>
     <section class="hero" aria-labelledby="page-title">
       <h1 id="page-title">Chi Shen Me</h1>
-      <p class="subtitle">Add the foods, places, or plans you are considering. Spin the wheel and let chance pick one for you.</p>
+      <p class="subtitle">Spin the wheel and let chance pick today's meal from the built-in options.</p>
     </section>
 
     <section class="content" aria-label="Spinning wheel picker">
@@ -297,42 +252,39 @@
           <div id="wheel" class="wheel"></div>
         </div>
         <button id="spin-button" class="spin-button" type="button">Spin</button>
-        <p id="status" class="status">Saved items persist on this device.</p>
+        <p id="status" class="status">Ready to spin.</p>
       </div>
 
       <aside class="panel">
-        <form id="item-form" autocomplete="off">
-          <input id="item-input" type="text" maxlength="80" placeholder="Add an item" aria-label="Item name">
-          <button id="add-button" type="submit">Add</button>
-        </form>
-
         <div class="list-header">
           <h2>Items</h2>
-          <span id="item-count" class="count">0 saved</span>
+          <span id="item-count" class="count">0 options</span>
         </div>
 
         <ul id="items" class="items"></ul>
-        <p id="empty-message" class="empty">No items yet. Add at least one option to spin.</p>
       </aside>
     </section>
   </main>
 
   <script>
-    const dbName = 'chi-shen-me-roulette';
-    const storeName = 'items';
+    const defaultItems = [
+      '劲脆烧肉',
+      '猪杂、粿条',
+      '老香鸡',
+      '蒙自源',
+      '饺子',
+      '酸菜鱼',
+      '狮头鹅',
+      '日式'
+    ].map((text, index) => ({ id: String(index), text }));
 
-    const form = document.getElementById('item-form');
-    const input = document.getElementById('item-input');
-    const addButton = document.getElementById('add-button');
     const spinButton = document.getElementById('spin-button');
     const wheel = document.getElementById('wheel');
     const status = document.getElementById('status');
     const itemList = document.getElementById('items');
-    const emptyMessage = document.getElementById('empty-message');
     const itemCount = document.getElementById('item-count');
 
-    let db;
-    let items = [];
+    const items = defaultItems;
     let spinning = false;
     let selectedId = null;
     let currentRotation = 0;
@@ -343,67 +295,7 @@
     }
 
     function setControlsDisabled(disabled) {
-      input.disabled = disabled;
-      addButton.disabled = disabled;
       spinButton.disabled = disabled || items.length === 0;
-      document.querySelectorAll('.delete-button').forEach((button) => {
-        button.disabled = disabled;
-      });
-    }
-
-    function requestToPromise(request) {
-      return new Promise((resolve, reject) => {
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
-      });
-    }
-
-    function openDatabase() {
-      return new Promise((resolve, reject) => {
-        const request = indexedDB.open(dbName, 1);
-
-        request.onupgradeneeded = () => {
-          const database = request.result;
-          if (!database.objectStoreNames.contains(storeName)) {
-            database.createObjectStore(storeName, { keyPath: 'id' });
-          }
-        };
-
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
-      });
-    }
-
-    function getStore(mode) {
-      return db.transaction(storeName, mode).objectStore(storeName);
-    }
-
-    async function loadItems() {
-      const savedItems = await requestToPromise(getStore('readonly').getAll());
-      items = savedItems.sort((a, b) => a.createdAt - b.createdAt);
-      renderItems();
-    }
-
-    async function saveItem(text) {
-      const item = {
-        id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
-        text,
-        createdAt: Date.now()
-      };
-
-      await requestToPromise(getStore('readwrite').add(item));
-      items.push(item);
-      renderItems();
-    }
-
-    async function deleteItem(id) {
-      await requestToPromise(getStore('readwrite').delete(id));
-      items = items.filter((item) => item.id !== id);
-      if (selectedId === id) {
-        selectedId = null;
-        updateResultPlaceholder();
-      }
-      renderItems();
     }
 
     function renderItems() {
@@ -416,28 +308,11 @@
         const text = document.createElement('span');
         text.textContent = item.text;
 
-        const deleteButton = document.createElement('button');
-        deleteButton.type = 'button';
-        deleteButton.className = 'delete-button';
-        deleteButton.textContent = 'Delete';
-        deleteButton.addEventListener('click', async () => {
-          try {
-            setControlsDisabled(true);
-            await deleteItem(item.id);
-            setStatus('Item deleted.');
-          } catch (error) {
-            setStatus(`Could not delete item: ${error.message || error}`);
-          } finally {
-            setControlsDisabled(spinning);
-          }
-        });
-
-        li.append(text, deleteButton);
+        li.append(text);
         itemList.append(li);
       }
 
-      emptyMessage.hidden = items.length > 0;
-      itemCount.textContent = `${items.length} saved`;
+      itemCount.textContent = `${items.length} options`;
       spinButton.disabled = spinning || items.length === 0;
       renderWheel();
     }
@@ -474,7 +349,7 @@
     }
 
     function updateResultPlaceholder() {
-      setStatus(items.length ? 'Ready to spin.' : 'Add items to begin.');
+      setStatus('Ready to spin.');
     }
 
     function pickWinningIndex() {
@@ -486,19 +361,16 @@
         return;
       }
 
-      if (items.length === 0) {
-        setStatus('Add at least one item before spinning.');
-        updateResultPlaceholder();
-        return;
-      }
-
       spinning = true;
       const winningIndex = pickWinningIndex();
       const winningItem = items[winningIndex];
       const segmentSize = 360 / items.length;
       const segmentCenter = winningIndex * segmentSize;
+      const rightSideAngle = 90;
       const fullTurns = 5 + Math.floor(Math.random() * 3);
-      currentRotation += fullTurns * 360 + (360 - ((currentRotation + segmentCenter) % 360));
+      const currentSegmentAngle = (currentRotation + segmentCenter) % 360;
+      const rotationToRightSide = (rightSideAngle - currentSegmentAngle + 360) % 360;
+      currentRotation += fullTurns * 360 + rotationToRightSide;
 
       setControlsDisabled(true);
       setStatus('Spinning...');
@@ -512,46 +384,11 @@
       }, 4300);
     }
 
-    form.addEventListener('submit', async (event) => {
-      event.preventDefault();
-      const text = input.value.trim();
-
-      if (!text) {
-        setStatus('Enter an item before adding it.');
-        input.focus();
-        return;
-      }
-
-      try {
-        setControlsDisabled(true);
-        await saveItem(text);
-        input.value = '';
-        input.focus();
-        if (!selectedId) {
-          updateResultPlaceholder();
-        }
-        setStatus('Item saved.');
-      } catch (error) {
-        setStatus(`Could not save item: ${error.message || error}`);
-      } finally {
-        setControlsDisabled(spinning);
-      }
-    });
-
     spinButton.addEventListener('click', spinWheel);
 
-    async function init() {
-      try {
-        db = await openDatabase();
-        await loadItems();
-        updateResultPlaceholder();
-        setStatus('Saved items persist on this device.');
-      } catch (error) {
-        setStatus(`IndexedDB is unavailable: ${error.message || error}`);
-        input.disabled = true;
-        addButton.disabled = true;
-        spinButton.disabled = true;
-      }
+    function init() {
+      renderItems();
+      updateResultPlaceholder();
     }
 
     init();
